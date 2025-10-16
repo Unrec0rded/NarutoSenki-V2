@@ -13,37 +13,26 @@ on:
 
 jobs:
   build_win32_v226:
-    # Menggunakan runner terbaru (saat ini windows-2022) sesuai rekomendasi.
     runs-on: windows-latest 
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          # Penting untuk Cocos2d-x: ambil semua submodule.
           submodules: recursive
 
       - name: Setup MSBuild and Visual Studio Environment
-        # Action ini membantu memastikan MSBuild dan variabel lingkungan diatur.
         uses: microsoft/setup-msbuild@v2 
         with:
-          # Menggunakan versi VS yang ada di runner (2022), tapi kita akan memaksa
-          # penggunaan toolset yang lebih tua di langkah build.
           vs-version: 'latest' 
           msbuild-architecture: x64
           
-      - name: Build Solution (Force VS 2013 Toolset: v120)
-        # Cocos2d-x 2.2.6 memerlukan toolset C++ lama, kemungkinan VS 2013 (v120).
-        # Runner windows-2022 biasanya masih menyediakan toolset ini sebagai opsi kompatibilitas.
-        run: |
-          # Perintah MSBuild untuk build Release Win32
-          # /p:PlatformToolset=v120 mengarahkan toolset ke VS 2013
-          msbuild NarutoSenki.sln /p:Configuration=Release /p:Platform=Win32 /m /t:Build /p:PlatformToolset=v120
+      - name: Build Solution
+        run: msbuild NarutoSenki.sln /p:Configuration=Release /p:Platform=Win32 /m /t:Build /p:PlatformToolset=v120
           
       - name: Archive Artifact (Opsional)
         uses: actions/upload-artifact@v4
         with:
           name: naruto-senki-win32-release
-          # Sesuaikan path output ini. Path standar untuk Win32 Cocos2d-x v2.x.
           path: projects/NarutoSenki/proj.win32/Release.win32/NarutoSenki.exe
           if-no-files-found: warn
