@@ -1,4 +1,4 @@
-name: Cocos2d-x 2.2.6 Build (Win32 - v141 Retarget)
+name: CI Build Windows (Naruto Senki)
 
 on:
   push:
@@ -12,34 +12,48 @@ on:
   workflow_dispatch:
 
 jobs:
-  build_win32_v226:
-    # Tetap gunakan windows-latest/windows-2022
+  build_win32:
+    # Menggunakan runner terbaru, yang memiliki VS 2022 (v143 toolset)
     runs-on: windows-latest 
 
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
+          # Pastikan semua submodule Cocos2d-x ditarik
           submodules: recursive
 
       - name: Setup MSBuild and Visual Studio Environment
-        # Action ini memastikan semua variabel lingkungan diatur.
+        # Mengatur path dan variabel lingkungan untuk MSBuild (VS 2022)
         uses: microsoft/setup-msbuild@v2 
         with:
           vs-version: 'latest' 
           msbuild-architecture: x64
           
-      - name: Build Solution
-        # ➡️ PERUBAHAN KRUSIAL: Mengubah toolset ke v141 (VS 2017). 
-        # Toolset v141 DIJAMIN terinstal di runner windows-latest (VS 2022).
-        # Ini bertindak sebagai "Retarget solution" otomatis yang diminta oleh error MSB8020.
+      # OPSI 1: Build Menggunakan MSBuild (Paling Andal di CI)
+      - name: Build Solution (Release|Win32)
+        # Karena README menyarankan VS 2022, kita asumsikan toolset modern default (v143)
+        # dapat digunakan tanpa memaksakan toolset lama (v120 atau v141).
         run: |
-          echo "Attempting to build using Platform Toolset v141 (VS 2017) to bypass MSB8020..."
-          msbuild cocos2d-win32.sln /p:Configuration=Release /p:Platform=Win32 /m /t:Build /p:PlatformToolset=v141
+          echo "Building cocos2d-win32.sln using default VS 2022 Toolset..."
+          msbuild cocos2d-win32.sln /p:Configuration=Release /p:Platform=Win32 /m /t:Build
           
-      - name: Archive Artifact (Opsional)
+          # Jika gagal dengan error MSB8020 lagi, coba paksa ke toolset VS 2019 (v142):
+          # msbuild cocos2d-win32.sln /p:Configuration=Release /p:Platform=Win32 /m /t:Build /p:PlatformToolset=v142
+
+      # OPSI 2: Build Menggunakan build.bat (Alternatif jika Anda memerlukannya)
+      # - name: Run custom build.bat
+      #   run: |
+      #     .\build.bat
+      
+      - name: Archive Artifact
         uses: actions/upload-artifact@v4
         with:
           name: naruto-senki-win32-release
-          path: projects/NarutoSenki/proj.win32/Release.win32/NarutoSenki.exe
+          # Berdasarkan struktur Anda: output harusnya ada di __BIN__
+          # Namun, output MSBuild biasanya default ke proj.win32\Release.win32
+          path: |
+            projects/NarutoSenki/proj.win32/Release.win32/NarutoSenki.exe
+            projects/NarutoSenki/__BIN__/NarutoSenki.exe
+            
           if-no-files-found: warn
