@@ -1,4 +1,4 @@
-name: Cocos2d-x 2.2.6 Build (Win32 - Release)
+name: Cocos2d-x 2.2.6 Build (Win32 - v141 Retarget)
 
 on:
   push:
@@ -13,6 +13,7 @@ on:
 
 jobs:
   build_win32_v226:
+    # Tetap gunakan windows-latest/windows-2022
     runs-on: windows-latest 
 
     steps:
@@ -21,47 +22,20 @@ jobs:
         with:
           submodules: recursive
 
-      # ➡️ LANGKAH KRUSIAL: Memastikan VS 2013 Toolset (v120) terinstal
-      - name: Install Missing Visual Studio 2013 Toolset (v120)
-        shell: powershell
-        run: |
-          # 1. Tentukan jalur untuk vswhere dan vs_installer
-          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
-          $installerPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
-          
-          if (-not (Test-Path $vswhere) -or -not (Test-Path $installerPath)) {
-              throw "Visual Studio Installer tools not found."
-          }
-          
-          # 2. Temukan jalur instalasi VS 2022
-          $vsPath = & "$vswhere" -latest -property installationPath
-          if (-not $vsPath) {
-              throw "VS 2022 installation path not found."
-          }
-          Write-Host "Found VS Installation Path: $vsPath"
-          
-          # 3. Tambahkan komponen Toolset v120 C++
-          # Menggunakan ID komponen yang ditujukan untuk kompiler/toolset v120 untuk desktop.
-          # Menambahkan --wait adalah kunci agar GitHub Actions menunggu proses instalasi selesai.
-          Write-Host "Installing Microsoft.VisualStudio.Component.VC.v120.x86.v120_tools (VS 2013 Toolset)..."
-          & "$installerPath" modify --installPath "$vsPath" --add Microsoft.VisualStudio.Component.VC.v120.x86.v120_tools --quiet --norestart --wait
-          
-          if ($LASTEXITCODE -ne 0) {
-              throw "FAILED to install VS 2013 (v120) toolset. Exit Code: $LASTEXITCODE"
-          }
-          Write-Host "VS 2013 Toolset (v120) installation SUCCESSFUL."
-
       - name: Setup MSBuild and Visual Studio Environment
-        # Panggil Setup MSBuild SETELAH toolset diinstal.
+        # Action ini memastikan semua variabel lingkungan diatur.
         uses: microsoft/setup-msbuild@v2 
         with:
           vs-version: 'latest' 
           msbuild-architecture: x64
           
       - name: Build Solution
-        # Toolset v120 sekarang seharusnya sudah tersedia untuk MSBuild.
+        # ➡️ PERUBAHAN KRUSIAL: Mengubah toolset ke v141 (VS 2017). 
+        # Toolset v141 DIJAMIN terinstal di runner windows-latest (VS 2022).
+        # Ini bertindak sebagai "Retarget solution" otomatis yang diminta oleh error MSB8020.
         run: |
-          msbuild cocos2d-win32.sln /p:Configuration=Release /p:Platform=Win32 /m /t:Build /p:PlatformToolset=v120
+          echo "Attempting to build using Platform Toolset v141 (VS 2017) to bypass MSB8020..."
+          msbuild cocos2d-win32.sln /p:Configuration=Release /p:Platform=Win32 /m /t:Build /p:PlatformToolset=v141
           
       - name: Archive Artifact (Opsional)
         uses: actions/upload-artifact@v4
