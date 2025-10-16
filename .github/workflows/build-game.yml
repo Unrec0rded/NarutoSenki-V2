@@ -1,0 +1,27 @@
+name: CI Game Build with MSBuild
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      
+    - name: Add MSBuild to PATH
+      uses: microsoft/setup-msbuild@v2 
+
+    - name: Build the project
+      run: msbuild cocos2d-win32.sln /p:Configuration=Release /p:Platform="Any CPU"
+
+    - name: Upload Build Artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: Game-Build-Release
+        path: GameProject/bin/Release/
