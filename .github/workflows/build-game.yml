@@ -21,44 +21,47 @@ jobs:
         with:
           submodules: recursive
 
-      # ➡️ LANGKAH KRUSIAL: Instal Toolset VS 2013 (v120) secara manual
+      # ➡️ LANGKAH PERBAIKAN KRUSIAL: Instal Toolset VS 2013 (v120)
       - name: Install Missing Visual Studio 2013 Toolset (v120)
         shell: powershell
         run: |
-          # 1. Temukan lokasi Visual Studio 2022 yang terinstal
+          # 1. Temukan lokasi Visual Studio 2022 yang terinstal menggunakan vswhere.
           $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
           if (-not $vsPath) {
               throw "Visual Studio path not found."
           }
-          Write-Host "VS Path: $vsPath"
+          Write-Host "Found VS 2022 Installation Path: $vsPath"
           
-          # 2. Gunakan Visual Studio Installer CLI untuk menambahkan komponen yang diperlukan.
-          # Komponen ini menambahkan Toolset v120 (VS 2013) ke instalasi VS 2022.
+          # 2. Tentukan jalur yang benar untuk vs_installer.exe.
+          $installerPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
+          
+          if (-not (Test-Path $installerPath)) {
+              throw "Visual Studio Installer not found at: $installerPath"
+          }
+          
+          # 3. Gunakan Installer CLI untuk menambahkan komponen yang diperlukan (Toolset v120).
           Write-Host "Installing missing v120 (VS 2013) C++ Toolset..."
-          & "$vsPath\..\..\Installer\vs_installer.exe" modify --installPath "$vsPath" --add Microsoft.VisualStudio.Component.VC.v120.CLI.Support --quiet --wait
+          & "$installerPath" modify --installPath "$vsPath" --add Microsoft.VisualStudio.Component.VC.v120.CLI.Support --quiet --norestart --wait
           
           if ($LASTEXITCODE -ne 0) {
               throw "Failed to install VS 2013 (v120) toolset. Exit Code: $LASTEXITCODE"
           }
-          Write-Host "Installation successful."
+          Write-Host "Installation successful.
 
       - name: Setup MSBuild and Visual Studio Environment
-        # Action ini memastikan semua variabel lingkungan diatur dengan benar setelah modifikasi.
         uses: microsoft/setup-msbuild@v2 
         with:
           vs-version: 'latest' 
           msbuild-architecture: x64
           
       - name: Build Solution
-        # Sekarang toolset v120 sudah diinstal, MSBuild harus menemukannya.
+        # Toolset v120 sekarang seharusnya sudah tersedia untuk MSBuild.
         run: |
-          # Menggunakan nama solusi dari output log error Anda: cocos2d-win32.sln
           msbuild cocos2d-win32.sln /p:Configuration=Release /p:Platform=Win32 /m /t:Build /p:PlatformToolset=v120
           
       - name: Archive Artifact (Opsional)
         uses: actions/upload-artifact@v4
         with:
           name: naruto-senki-win32-release
-          # Sesuaikan path ini jika berbeda
           path: projects/NarutoSenki/proj.win32/Release.win32/NarutoSenki.exe
           if-no-files-found: warn
