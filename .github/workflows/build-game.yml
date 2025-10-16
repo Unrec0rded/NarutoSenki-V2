@@ -1,27 +1,38 @@
-name: CI Game Build with MSBuild
+name: Cocos2d-x 2.2.6 Build (Win32 - Release)
 
 on:
   push:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
   pull_request:
-    branches: [ main, master ]
+    branches:
+      - main
+      - master
+  workflow_dispatch:
 
 jobs:
-  build:
-    runs-on: windows-latest
+  build_win32_v226:
+    runs-on: windows-2019 
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-      
-    - name: Add MSBuild to PATH
-      uses: microsoft/setup-msbuild@v2 
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
 
-    - name: Build the project
-      run: msbuild cocos2d-win32.sln /p:Configuration=Release /p:Platform="Win32"
-
-    - name: Upload Build Artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: Game-Build-Release
-        path: GameProject/bin/Release/
+      - name: Setup MSBuild and Visual Studio Environment
+        uses: microsoft/setup-msbuild@v1.1
+        with:
+          vs-version: '2019'
+          msbuild-architecture: x64
+          
+      - name: Build Solution (Release|Win32)
+        run: msbuild NarutoSenki.sln /p:Configuration=Release /p:Platform=Win32 /m /t:Build /p:PlatformToolset=v120
+          
+      - name: Archive Artifact (Optional)
+        uses: actions/upload-artifact@v4
+        with:
+          name: naruto-senki-win32-release
+          path: projects/NarutoSenki/proj.win32/Release.win32/NarutoSenki.exe
+          if-no-files-found: warn
