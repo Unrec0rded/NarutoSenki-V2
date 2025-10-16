@@ -21,24 +21,46 @@ jobs:
         with:
           submodules: recursive
 
-      - name: Install Visual Studio 2013 Toolset (v120)
-        uses: chuckdries/setup-windows-sdk@v1.1.1
-        with:
-          components: Microsoft.VisualStudio.Component.VC.v120.CLI.Support 
+      # ➡️ LANGKAH KRUSIAL: Instal Toolset VS 2013 (v120) secara manual
+      - name: Install Missing Visual Studio 2013 Toolset (v120)
+        shell: powershell
+        run: |
+          # 1. Temukan lokasi Visual Studio 2022 yang terinstal
+          $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
+          if (-not $vsPath) {
+              throw "Visual Studio path not found."
+          }
+          Write-Host "VS Path: $vsPath"
           
+          # 2. Gunakan Visual Studio Installer CLI untuk menambahkan komponen yang diperlukan.
+          # Komponen ini menambahkan Toolset v120 (VS 2013) ke instalasi VS 2022.
+          Write-Host "Installing missing v120 (VS 2013) C++ Toolset..."
+          & "$vsPath\..\..\Installer\vs_installer.exe" modify --installPath "$vsPath" --add Microsoft.VisualStudio.Component.VC.v120.CLI.Support --quiet --wait
+          
+          if ($LASTEXITCODE -ne 0) {
+              throw "Failed to install VS 2013 (v120) toolset. Exit Code: $LASTEXITCODE"
+          }
+          Write-Host "Installation successful."
+
+      ---
+
       - name: Setup MSBuild and Visual Studio Environment
+        # Action ini memastikan semua variabel lingkungan diatur dengan benar setelah modifikasi.
         uses: microsoft/setup-msbuild@v2 
         with:
           vs-version: 'latest' 
           msbuild-architecture: x64
           
-      - name: Build Solution
+      - name: Build Solution (Force VS 2013 Toolset: v120)
+        # Sekarang toolset v120 sudah diinstal, MSBuild harus menemukannya.
         run: |
+          # Menggunakan nama solusi dari output log error Anda: cocos2d-win32.sln
           msbuild cocos2d-win32.sln /p:Configuration=Release /p:Platform=Win32 /m /t:Build /p:PlatformToolset=v120
           
       - name: Archive Artifact (Opsional)
         uses: actions/upload-artifact@v4
         with:
           name: naruto-senki-win32-release
+          # Sesuaikan path ini jika berbeda
           path: projects/NarutoSenki/proj.win32/Release.win32/NarutoSenki.exe
           if-no-files-found: warn
