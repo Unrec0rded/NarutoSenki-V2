@@ -21,35 +21,38 @@ jobs:
         with:
           submodules: recursive
 
-      # ➡️ LANGKAH KRUSIAL: Instal Toolset VS 2013 (v120) secara manual
+      # ➡️ LANGKAH KRUSIAL: Memastikan VS 2013 Toolset (v120) terinstal
       - name: Install Missing Visual Studio 2013 Toolset (v120)
         shell: powershell
         run: |
-          # 1. Temukan lokasi Visual Studio 2022 yang terinstal menggunakan vswhere.
-          $vsPath = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -property installationPath
-          if (-not $vsPath) {
-              throw "Visual Studio path not found."
-          }
-          Write-Host "Found VS 2022 Installation Path: $vsPath"
-          
-          # 2. Tentukan jalur yang benar untuk vs_installer.exe.
+          # 1. Tentukan jalur untuk vswhere dan vs_installer
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
           $installerPath = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vs_installer.exe"
           
-          if (-not (Test-Path $installerPath)) {
-              throw "Visual Studio Installer not found at: $installerPath"
+          if (-not (Test-Path $vswhere) -or -not (Test-Path $installerPath)) {
+              throw "Visual Studio Installer tools not found."
           }
           
-          # 3. Gunakan Installer CLI untuk menambahkan komponen yang diperlukan (Toolset v120).
-          Write-Host "Installing missing v120 (VS 2013) C++ Toolset..."
-          & "$installerPath" modify --installPath "$vsPath" --add Microsoft.VisualStudio.Component.VC.v120.CLI.Support --quiet --norestart --wait
+          # 2. Temukan jalur instalasi VS 2022
+          $vsPath = & "$vswhere" -latest -property installationPath
+          if (-not $vsPath) {
+              throw "VS 2022 installation path not found."
+          }
+          Write-Host "Found VS Installation Path: $vsPath"
+          
+          # 3. Tambahkan komponen Toolset v120 C++
+          # Menggunakan ID komponen yang ditujukan untuk kompiler/toolset v120 untuk desktop.
+          # Menambahkan --wait adalah kunci agar GitHub Actions menunggu proses instalasi selesai.
+          Write-Host "Installing Microsoft.VisualStudio.Component.VC.v120.x86.v120_tools (VS 2013 Toolset)..."
+          & "$installerPath" modify --installPath "$vsPath" --add Microsoft.VisualStudio.Component.VC.v120.x86.v120_tools --quiet --norestart --wait
           
           if ($LASTEXITCODE -ne 0) {
-              throw "Failed to install VS 2013 (v120) toolset. Exit Code: $LASTEXITCODE"
+              throw "FAILED to install VS 2013 (v120) toolset. Exit Code: $LASTEXITCODE"
           }
-          # ✅ PERBAIKAN: Menambahkan tanda kutip penutup yang hilang di sini.
-          Write-Host "Installation successful."
+          Write-Host "VS 2013 Toolset (v120) installation SUCCESSFUL."
 
       - name: Setup MSBuild and Visual Studio Environment
+        # Panggil Setup MSBuild SETELAH toolset diinstal.
         uses: microsoft/setup-msbuild@v2 
         with:
           vs-version: 'latest' 
