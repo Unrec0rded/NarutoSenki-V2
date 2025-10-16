@@ -21,7 +21,7 @@ jobs:
         with:
           submodules: recursive
 
-      # ➡️ LANGKAH PERBAIKAN KRUSIAL: Instal Toolset VS 2013 (v120)
+      # ➡️ LANGKAH KRUSIAL: Instal Toolset VS 2013 (v120) secara manual
       - name: Install Missing Visual Studio 2013 Toolset (v120)
         shell: powershell
         run: |
@@ -46,7 +46,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) {
               throw "Failed to install VS 2013 (v120) toolset. Exit Code: $LASTEXITCODE"
           }
-          Write-Host "Installation successful.
+          # ✅ PERBAIKAN: Menambahkan tanda kutip penutup yang hilang di sini.
+          Write-Host "Installation successful."
 
       - name: Setup MSBuild and Visual Studio Environment
         uses: microsoft/setup-msbuild@v2 
