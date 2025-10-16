@@ -21,6 +21,11 @@ jobs:
         with:
           submodules: recursive
 
+      - name: Install Visual Studio 2013 Toolset (v120)
+        uses: chuckdries/setup-windows-sdk@v1.1.1
+        with:
+          components: Microsoft.VisualStudio.Component.VC.v120.CLI.Support 
+          
       - name: Setup MSBuild and Visual Studio Environment
         uses: microsoft/setup-msbuild@v2 
         with:
@@ -28,7 +33,8 @@ jobs:
           msbuild-architecture: x64
           
       - name: Build Solution
-        run: msbuild cocos2d-win32.sln /p:Configuration=Release /p:Platform=Win32 /m /t:Build /p:PlatformToolset=v120
+        run: |
+          msbuild cocos2d-win32.sln /p:Configuration=Release /p:Platform=Win32 /m /t:Build /p:PlatformToolset=v120
           
       - name: Archive Artifact (Opsional)
         uses: actions/upload-artifact@v4
