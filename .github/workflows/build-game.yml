@@ -42,8 +42,6 @@ jobs:
           }
           Write-Host "Installation successful."
 
-      ---
-
       - name: Setup MSBuild and Visual Studio Environment
         # Action ini memastikan semua variabel lingkungan diatur dengan benar setelah modifikasi.
         uses: microsoft/setup-msbuild@v2 
@@ -51,7 +49,7 @@ jobs:
           vs-version: 'latest' 
           msbuild-architecture: x64
           
-      - name: Build Solution (Force VS 2013 Toolset: v120)
+      - name: Build Solution
         # Sekarang toolset v120 sudah diinstal, MSBuild harus menemukannya.
         run: |
           # Menggunakan nama solusi dari output log error Anda: cocos2d-win32.sln
